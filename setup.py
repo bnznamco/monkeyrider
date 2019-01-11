@@ -11,7 +11,7 @@ setup(
         'xmltodict==0.11.0'
     ],
     description="A tool to guide monkeys through unknown apks",
-    long_description=open('README.md', 'r').read(),
+    long_description=long_description,
     license="MIT",
     author="Gabriele Baldi",
     author_email="gabriele.baldi.01@gmail.com",
