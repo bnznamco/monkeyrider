@@ -10,6 +10,9 @@ setup(
     install_requires=[
         'xmltodict==0.11.0'
     ],
+    entry_points={
+        'console_scripts': ['monkeyrider=monkeyrider.monkeyrider:main'],
+    },
     description="A tool to guide monkeys through unknown apks",
     long_description=long_description,
     license="MIT",
