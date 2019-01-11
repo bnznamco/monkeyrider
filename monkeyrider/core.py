@@ -4,6 +4,7 @@ import xmltodict
 import json
 from . import config
 import sys
+import re
 
 
 class MonkeyRider(object):
@@ -29,6 +30,7 @@ class MonkeyRider(object):
         self.package_name = self.AndroidManifest['manifest']['@package']
         self.activity_list = [act['@android:name'] for act in self.AndroidManifest['manifest']['application']['activity']] 
         self.main_activity = self.__get_main_activity()
+        self.activity_layouts = self.__associate_layouts()
 
     def __get_main_activity(self):
         for act in self.AndroidManifest['manifest']['application']['activity']:
@@ -47,9 +49,55 @@ class MonkeyRider(object):
         for c in iter(lambda: out.stdout.read(1), b''):
             sys.stdout.write(c.decode('utf-8'))
 
+    def activity_with_paths(self):
+        activity_with_paths = []
+        for activity in self.activity_list:
+            smali_path = activity.split('.')
+            smali_file = smali_path.pop() + '.smali'
+            smali_path.append(smali_file)
+            touple = (activity, os.path.join(self.base_dir, 'smali', *smali_path))
+            activity_with_paths.append(touple)
+        return activity_with_paths
+
+    def __associate_layouts_codes_to_names(self):
+            with open(os.path.join(self.base_dir, 'res', 'values', 'public.xml')) as m:
+                self.public_schema = xmltodict.parse(m.read())
+            code_names = {}
+            for element in self.public_schema['resources']['public']:
+                if element['@type'] == 'layout':
+                    code_names[element['@id']] = element['@name']
+            return code_names
+
     def __associate_layouts(self):
-        pass
-        #  TODO
+        activities_wln = []
+        code_names = self.__associate_layouts_codes_to_names()
+        for activity in self.activity_with_paths():
+            with open(activity[1]) as f:
+                content = f.readlines()
+                content = [x.strip().replace('\n', '') for x in content] 
+                for i in range(len(content)):
+                    layout_code = []
+                    if 'setContentView' in content[i]:
+                        origin = i
+                        while not len(layout_code):
+                            origin -= 1
+                            layout_code = re.findall(
+                                r'0x[0-9A-F]+',
+                                content[origin], re.I
+                                )
+                            if i - origin > 10:
+                                break
+                    if len(layout_code):
+                        activities_wln.append(
+                            (activity[0], code_names[layout_code[0]])
+                        )
+                        break
+        return activities_wln
+
+
+
+
+        #  TODO (almost done)
         #  we need to check smali activity path and figure out
         #  how to take the right path everytime and find activity files,
         #  for eache activity we need to find setContentView function and
