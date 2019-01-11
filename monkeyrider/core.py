@@ -6,9 +6,6 @@ from . import config
 import sys
 
 
-# TODO choose name for the project maybe monkeyride?
-
-
 class MonkeyRider(object):
     def __init__(self, apk_path):
         self.apk_path = os.path.abspath(apk_path)

@@ -12,6 +12,26 @@ pip install git+https://github.com/bnznamco/monkeyrider.git
 
 ```
 
+## Requirements
+
+The tool needs Android Sdk to be installed.
+It will search for an env variable called ANDROID_HOME.
+
+You can set it as follows:
+
+```bash
+export ANDROID_HOME=<path_to_your_sdk>
+
+```
+to make permanent this env variable, add it to your bashrc.
+
+If the variable is not available, the tool will search it in the standard location
+
+```bash
+~/Android/Sdk
+
+```
+
 ## Usage
 
 ```bash
@@ -22,7 +42,6 @@ monkeyrider <path_of_your_apk>
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Please make sure to update tests as appropriate.
 
 ## License
 [MIT](LICENSE)

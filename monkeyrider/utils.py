@@ -36,11 +36,15 @@ def get_emulator_images(emulator_path=config.EMULATOR_PATH):
     if len(images):
         return images[0]
     else:
-        raise Exception('No emulator images found, please create a device with AVD manager')
+        raise Exception(
+            'No emulator images found, please create a device with AVD manager'
+            )
 
 
 def run_emulator(emulator_path=config.EMULATOR_PATH, adb_path=config.ADB_PATH):
-    subprocess.Popen([emulator_path, '-avd', get_emulator_images(emulator_path)])
+    subprocess.Popen(
+        [emulator_path, '-avd', get_emulator_images(emulator_path)]
+        )
     boot_completed = False
     time.sleep(5)
     while boot_completed != '1':
