@@ -15,6 +15,7 @@ def main():
     if not len(devices):
         print('No devices found, setting up emulator')
         run_emulator()
+        print('Emulator boot completed.. proceding..')
 
     device = MonkeyRunner.waitForConnection()
     print('Connected\nInstalling package..')

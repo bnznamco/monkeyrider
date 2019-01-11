@@ -17,7 +17,7 @@ class MonkeyRider(object):
 
     def __decompile(self):
         out = subprocess.Popen(
-            ['./bin/apktool', 'd', self.apk_path],
+            [config.APKTOOL_PATH, 'd', self.apk_path],
             stdout=subprocess.PIPE
             )
         for c in iter(lambda: out.stdout.read(1), b''):
@@ -44,7 +44,7 @@ class MonkeyRider(object):
 
     def monkeyrunner(self):
         out = subprocess.Popen(
-            [config.MONKEYRUNNER_PATH, 'monkeyrunner.py', self.apk_path, self.package_name]+self.activity_list,
+            [config.MONKEYRUNNER_PATH, config.MONKEYSCRIPT_PATH, self.apk_path, self.package_name]+self.activity_list,
             stdout=subprocess.PIPE,
             )
         for c in iter(lambda: out.stdout.read(1), b''):
