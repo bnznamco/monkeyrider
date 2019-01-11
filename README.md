@@ -8,7 +8,8 @@ It relies on apktool to decompile apk and then analyzes the decoded manifest to 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install monkeyrider.
 
 ```bash
-currently_not_available
+pip install git+https://github.com/bnznamco/monkeyrider.git
+
 ```
 
 ## Usage
