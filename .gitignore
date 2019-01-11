@@ -1,0 +1,8 @@
+*.class
+*.pyc
+monkeyresult
+test
+test.apk
+AndroidManifestJSON_for_debug
+.vscode
+__pycache__
