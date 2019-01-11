@@ -2,7 +2,7 @@ import subprocess
 import os
 import xmltodict
 import json
-import config
+from . import config
 import sys
 
 

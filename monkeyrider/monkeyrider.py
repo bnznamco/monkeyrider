@@ -1,6 +1,6 @@
 
 import sys
-from core import MonkeyRider
+from .core import MonkeyRider
 
 
 def main():
