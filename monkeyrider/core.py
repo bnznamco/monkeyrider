@@ -60,38 +60,44 @@ class MonkeyRider(object):
         return activity_with_paths
 
     def __associate_layouts_codes_to_names(self):
+        code_names = {}
+        try:
             with open(os.path.join(self.base_dir, 'res', 'values', 'public.xml')) as m:
                 self.public_schema = xmltodict.parse(m.read())
-            code_names = {}
-            for element in self.public_schema['resources']['public']:
-                if element['@type'] == 'layout':
-                    code_names[element['@id']] = element['@name']
+        except OSError:
             return code_names
+        for element in self.public_schema['resources']['public']:
+            if element['@type'] == 'layout':
+                code_names[element['@id']] = element['@name']
+        return code_names
 
     def __associate_layouts(self):
         activities_wln = []
         code_names = self.__associate_layouts_codes_to_names()
         for activity in self.activity_with_paths():
-            with open(activity[1]) as f:
-                content = f.readlines()
-                content = [x.strip().replace('\n', '') for x in content] 
-                for i in range(len(content)):
-                    layout_code = []
-                    if 'setContentView' in content[i]:
-                        origin = i
-                        while not len(layout_code):
-                            origin -= 1
-                            layout_code = re.findall(
-                                r'0x[0-9A-F]+',
-                                content[origin], re.I
-                                )
-                            if i - origin > 10:
-                                break
-                    if len(layout_code):
-                        activities_wln.append(
-                            (activity[0], code_names[layout_code[0]])
-                        )
-                        break
+            try:
+                with open(activity[1]) as f:
+                    content = f.readlines()
+                    content = [x.strip().replace('\n', '') for x in content] 
+                    for i in range(len(content)):
+                        layout_code = []
+                        if 'setContentView' in content[i]:
+                            origin = i
+                            while not len(layout_code):
+                                origin -= 1
+                                layout_code = re.findall(
+                                    r'0x[0-9A-F]+',
+                                    content[origin], re.I
+                                    )
+                                if origin == 0 or i - origin > 10:
+                                    break
+                        if len(layout_code) and layout_code[0] in code_names:
+                            activities_wln.append(
+                                (activity[0], code_names[layout_code[0]])
+                            )
+                            break
+            except OSError:
+                pass
         return activities_wln
 
 
