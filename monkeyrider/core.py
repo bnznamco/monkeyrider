@@ -21,6 +21,9 @@ class MonkeyRider(object):
         for c in iter(lambda: out.stdout.read(1), b''):
             sys.stdout.write(c.decode('utf-8'))
         self.base_dir = os.path.abspath(self.apk_path.replace('.apk', ''))
+        self.instruction_file = os.path.abspath(
+            self.apk_path.replace('.apk', '_instructions')
+            )
 
     def __load_structure(self):
         with open(os.path.join(self.base_dir, 'AndroidManifest.xml')) as m:
@@ -42,8 +45,9 @@ class MonkeyRider(object):
                         return act['@android:name']
 
     def monkeyrunner(self):
+        self.__build_monkey_instruction()
         out = subprocess.Popen(
-            [config.MONKEYRUNNER_PATH, config.MONKEYSCRIPT_PATH, self.apk_path, self.package_name]+self.activity_list,
+            [config.MONKEYRUNNER_PATH, config.MONKEYSCRIPT_PATH, self.apk_path, self.package_name, self.instruction_file],
             stdout=subprocess.PIPE,
             )
         for c in iter(lambda: out.stdout.read(1), b''):
@@ -100,12 +104,59 @@ class MonkeyRider(object):
                 pass
         return activities_wln
 
+    def __associate_elements_code_to_name(self):
+        code_names = {}
+        try:
+            with open(os.path.join(self.base_dir, 'res', 'values', 'public.xml')) as m:
+                self.public_schema = xmltodict.parse(m.read())
+        except OSError:
+            return code_names
+        for element in self.public_schema['resources']['public']:
+            if element['@type'] == 'id':
+                code_names[element['@id']] = element['@name']
+        return code_names
 
+    def __naive_button_search(self):
+        activities_we = []
+        code_names = self.__associate_elements_code_to_name()
+        for activity in self.activity_with_paths():
+            try:
+                with open(activity[1]) as f:
+                    content = f.readlines()
+                    content = [x.strip().replace('\n', '') for x in content]
+                    elements = []
+                    for i in range(len(content)):
+                        layout_code = []
+                        if 'findViewById' in content[i]:
+                            origin = i
+                            while not len(layout_code):
+                                origin -= 1
+                                layout_code = re.findall(
+                                    r'0x[0-9A-F]+',
+                                    content[origin], re.I
+                                    )
+                                if origin == 0 or i - origin > 5:
+                                    break
+                        if len(layout_code) and layout_code[0] in code_names:
+                            elements.append(code_names[layout_code[0]])
+                    if len(elements):        
+                        activities_we.append(
+                                    (activity[0], elements)
+                                )
+            except OSError:
+                pass
+        return activities_we
 
+    def __build_monkey_instruction(self):
+        action_dict = dict()
+        for element in self.__naive_button_search():
+            action_dict[element[0]] = element[1]
+        with open(self.instruction_file, 'w') as f:
+            f.write(json.dumps(action_dict, indent=4))
 
-        #  TODO (almost done)
-        #  we need to check smali activity path and figure out
-        #  how to take the right path everytime and find activity files,
-        #  for eache activity we need to find setContentView function and
-        #  grab the ext constant associated with layout,
-        #  then we can check for public.xml to associate hex with name!
+    # TODO
+    # Create a tree for navigation:
+    #     - need to know which button start which activity
+    #     - need to keep trace of the path we find
+    #     - need to organize activity visit order
+    #     - if possible find a whay to make monkey aware of current activity
