@@ -39,10 +39,25 @@ class MonkeyRider(object):
         for act in self.AndroidManifest['manifest']['application']['activity']:
             if 'intent-filter' in act:
                 for i in act['intent-filter']:
-                    if ('action' in i and 'category' in i and
-                        i['action']['@android:name'] == 'android.intent.action.MAIN' and
-                        i['category']['@android:name'] == 'android.intent.category.LAUNCHER'):
-                        return act['@android:name']
+                    if 'action' in i and 'category' in i:
+                        act_check = False
+                        cat_check = False
+                        if isinstance(i['action'], list):
+                            for action in i['action']:
+                                if action['@android:name'] == 'android.intent.action.MAIN':
+                                    act_check = True
+                                    break
+                        elif i['action']['@android:name'] == 'android.intent.action.MAIN':
+                            act_check = True
+                        if isinstance(i['category'], list):
+                            for category in i['category']:
+                                if category['@android:name'] == 'android.intent.category.LAUNCHER':
+                                    cat_check = True
+                                    break
+                        elif i['category']['@android:name'] == 'android.intent.category.LAUNCHER':
+                            cat_check = True
+                        if cat_check and act_check:
+                            return act['@android:name']
 
     def monkeyrunner(self):
         self.__build_monkey_instruction()
