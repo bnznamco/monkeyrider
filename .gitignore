@@ -7,3 +7,4 @@ test_instructions
 AndroidManifestJSON_for_debug
 .vscode
 __pycache__
+*.egg-info
