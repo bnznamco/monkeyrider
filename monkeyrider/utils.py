@@ -38,7 +38,7 @@ def get_emulator_images(emulator_path=config.EMULATOR_PATH):
     else:
         raise Exception(
             'No emulator images found, please create a device with AVD manager'
-            )
+        )
 
 
 def run_emulator(emulator_path=config.EMULATOR_PATH, adb_path=config.ADB_PATH):

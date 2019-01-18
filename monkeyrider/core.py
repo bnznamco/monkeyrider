@@ -12,6 +12,7 @@ class MonkeyRider(object):
         self.apk_path = os.path.abspath(apk_path)
         self.__decompile()
         self.__load_structure()
+        self.activity_with_paths()
 
     def __decompile(self):
         out = subprocess.Popen(
@@ -68,15 +69,29 @@ class MonkeyRider(object):
         for c in iter(lambda: out.stdout.read(1), b''):
             sys.stdout.write(c.decode('utf-8'))
 
+    # def activity_with_paths(self):
+    #     activity_with_paths = []
+    #     for activity in self.activity_list:
+    #         smali_path = activity.split('.')
+    #         smali_file = smali_path.pop() + '.smali'
+    #         smali_path.append(smali_file)
+    #         touple = (activity, os.path.join(self.base_dir, 'smali', *smali_path))
+    #         activity_with_paths.append(touple)
+    #     return activity_with_paths
+
     def activity_with_paths(self):
-        activity_with_paths = []
+        smali_for_activity = {}
         for activity in self.activity_list:
+            smali_for_activity[activity] = []
             smali_path = activity.split('.')
-            smali_file = smali_path.pop() + '.smali'
-            smali_path.append(smali_file)
-            touple = (activity, os.path.join(self.base_dir, 'smali', *smali_path))
-            activity_with_paths.append(touple)
-        return activity_with_paths
+            activity_name = smali_path.pop()
+            search_path = os.path.join(self.base_dir, 'smali', *smali_path)
+            for root, dirs, files in os.walk(search_path, topdown=False):
+                for name in files:
+                    file_path = os.path.join(root, name)
+                    if activity_name in str(file_path):
+                        smali_for_activity[activity].append(file_path)
+        return smali_for_activity
 
     def __associate_layouts_codes_to_names(self):
         code_names = {}
@@ -93,31 +108,33 @@ class MonkeyRider(object):
     def __associate_layouts(self):
         activities_wln = []
         code_names = self.__associate_layouts_codes_to_names()
-        for activity in self.activity_with_paths():
-            try:
-                with open(activity[1]) as f:
-                    content = f.readlines()
-                    content = [x.strip().replace('\n', '') for x in content] 
-                    for i in range(len(content)):
-                        layout_code = []
-                        if 'setContentView' in content[i]:
-                            origin = i
-                            while not len(layout_code):
-                                origin -= 1
-                                layout_code = re.findall(
-                                    r'0x[0-9A-F]+',
-                                    content[origin], re.I
-                                    )
-                                if origin == 0 or i - origin > 10:
-                                    break
-                        if len(layout_code) and layout_code[0] in code_names:
-                            activities_wln.append(
-                                (activity[0], code_names[layout_code[0]])
-                            )
-                            break
-            except OSError:
-                pass
-        return activities_wln
+        activity_wp = self.activity_with_paths()
+        for activity, paths in activity_wp.items():
+            for path in paths:
+                try:
+                    with open(path) as f:
+                        content = f.readlines()
+                        content = [x.strip().replace('\n', '') for x in content] 
+                        for i in range(len(content)):
+                            layout_code = []
+                            if 'setContentView' in content[i]:
+                                origin = i
+                                while not len(layout_code):
+                                    origin -= 1
+                                    layout_code = re.findall(
+                                        r'0x[0-9A-F]+',
+                                        content[origin], re.I
+                                        )
+                                    if origin == 0 or i - origin > 10:
+                                        break
+                            if len(layout_code) and layout_code[0] in code_names:
+                                activities_wln.append(
+                                    (activity, code_names[layout_code[0]])
+                                )
+                                break
+                except OSError:
+                    pass
+        return set(activities_wln)
 
     def __associate_elements_code_to_name(self):
         code_names = {}
@@ -134,32 +151,34 @@ class MonkeyRider(object):
     def __naive_button_search(self):
         activities_we = []
         code_names = self.__associate_elements_code_to_name()
-        for activity in self.activity_with_paths():
-            try:
-                with open(activity[1]) as f:
-                    content = f.readlines()
-                    content = [x.strip().replace('\n', '') for x in content]
-                    elements = []
-                    for i in range(len(content)):
-                        layout_code = []
-                        if 'findViewById' in content[i]:
-                            origin = i
-                            while not len(layout_code):
-                                origin -= 1
-                                layout_code = re.findall(
-                                    r'0x[0-9A-F]+',
-                                    content[origin], re.I
+        activity_wp = self.activity_with_paths()
+        for activity, paths in activity_wp.items():
+            elements = []
+            for path in paths:
+                try:
+                    with open(path) as f:
+                        content = f.readlines()
+                        content = [x.strip().replace('\n', '') for x in content]
+                        for i in range(len(content)):
+                            layout_code = []
+                            if 'findViewById' in content[i]:
+                                origin = i
+                                while not len(layout_code):
+                                    origin -= 1
+                                    layout_code = re.findall(
+                                        r'0x[0-9A-F]+',
+                                        content[origin], re.I
+                                        )
+                                    if origin == 0 or i - origin > 5:
+                                        break
+                            if len(layout_code) and layout_code[0] in code_names:
+                                elements.append(code_names[layout_code[0]])
+                        if len(elements):
+                            activities_we.append(
+                                        (activity, elements)
                                     )
-                                if origin == 0 or i - origin > 5:
-                                    break
-                        if len(layout_code) and layout_code[0] in code_names:
-                            elements.append(code_names[layout_code[0]])
-                    if len(elements):        
-                        activities_we.append(
-                                    (activity[0], elements)
-                                )
-            except OSError:
-                pass
+                except OSError:
+                    pass
         return activities_we
 
     def __build_monkey_instruction(self):
