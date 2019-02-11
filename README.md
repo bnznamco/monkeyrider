@@ -1,4 +1,6 @@
 # Monkeyrider
+<img src="logo.png" width="300">
+
 
 Monkeyrider is a Python tool for dealing with monkeyrunner android test framework.
 It relies on apktool to decompile apk and then analyzes the decoded manifest to guide the monkey through the app.
